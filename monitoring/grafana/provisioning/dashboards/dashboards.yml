@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: key-management-lab
+    folder: Key Management Lab
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

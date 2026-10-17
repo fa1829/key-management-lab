@@ -1,0 +1,31 @@
+groups:
+  - name: key-management
+    rules:
+      - alert: CertificateExpiringSoon
+        expr: pki_cert_expiry_days < 15 and on(serial) pki_cert_revoked == 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Certificate {{ $labels.cn }} expires in {{ $value | humanize }} days"
+      - alert: CertificateExpired
+        expr: pki_cert_expiry_days < 0 and on(serial) pki_cert_revoked == 0
+        labels: {severity: critical}
+        annotations:
+          summary: "Certificate {{ $labels.cn }} has expired"
+      - alert: CRLStale
+        expr: pki_crl_next_update_days < 2
+        labels: {severity: critical}
+        annotations:
+          summary: "CRL for {{ $labels.ca }} must be republished within {{ $value | humanize }} days"
+      - alert: HSMTokenUnavailable
+        expr: hsm_token_present == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "HSM token {{ $labels.token }} is not answering on PKCS#11"
+      - alert: KMIPServerDown
+        expr: kmip_server_up == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "KMIP server is not accepting connections"

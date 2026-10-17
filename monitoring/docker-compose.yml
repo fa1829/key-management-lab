@@ -1,0 +1,37 @@
+# Prometheus + Grafana for the key-management lab.
+#
+# Both containers use host networking, so they see the exporter (python/crypto_exporter.py)
+# on localhost:9105 exactly as you do. This works with Docker Engine installed inside WSL
+# or on native Linux. With Docker Desktop, turn on host networking first
+# (Settings > Resources > Network), or see docs/TROUBLESHOOTING.md.
+#
+# Open from Windows or Linux:  Grafana http://localhost:3000   Prometheus http://localhost:9090
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: kml-prometheus
+    network_mode: host
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.listen-address=:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: kml-grafana
+    network_mode: host
+    environment:
+      GF_SERVER_HTTP_PORT: "3000"
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: labadmin        # demo only
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/key-management.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [prometheus]
+    restart: unless-stopped

@@ -1,0 +1,26 @@
+# Runs the whole lab on a fresh Ubuntu 24.04 runner on every push.
+# A green badge in the README means: install works, every module passes its own checks.
+name: lab
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install (apt packages + Python environments)
+        run: make install
+      - name: Pre-flight check
+        run: make doctor
+      - name: Run modules 01-04 end to end
+        run: make demo
+      - name: Renew the short-lived certificate
+        run: make renew
+      - name: Validate Prometheus alert rules
+        run: docker run --rm -v "$PWD/monitoring:/m:ro" --entrypoint promtool prom/prometheus:v2.54.1 check rules /m/alert-rules.yml
+      - name: Stop the KMIP server
+        if: always()
+        run: make kmip-stop
